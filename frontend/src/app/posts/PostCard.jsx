@@ -21,11 +21,11 @@ const PostCard = ({ post, isLiked, onShare, onComment, onLike }) => {
   const [showComments, setShowComments] = useState(false);
   const commentInputRef = useRef(null)
 
-  const handleCommentClick = () =>{
+  const handleCommentClick = () => {
     setShowComments(true);
-    setTimeout(() =>{
+    setTimeout(() => {
       commentInputRef?.current?.focus();
-    },0)
+    }, 0)
   }
   const userPostPlaceholder = post?.user?.username
     ?.split(" ")
@@ -73,17 +73,17 @@ const PostCard = ({ post, isLiked, onShare, onComment, onLike }) => {
 
             >
               <Avatar>
-                {post?.user?.profilePicture ? (
-                                 <AvatarImage
-                                 src={post?.user?.profilePicture}
-                                 alt={post?.user?.username}
-                                 />
-                ):(
+                {post?.user?.profilePicture && post.user.profilePicture !== "" ? (
+                  <AvatarImage
+                    src={post?.user?.profilePicture}
+                    alt={post?.user?.username}
+                  />
+                ) : (
                   <AvatarFallback className="dark:bg-gray-400">{userPostPlaceholder}</AvatarFallback>
                 )}
-    
-              
-  
+
+
+
               </Avatar>
               <div>
                 <p className="font-semibold dark:text-white">
@@ -119,12 +119,12 @@ const PostCard = ({ post, isLiked, onShare, onComment, onLike }) => {
             <div className="flex gap-3">
               <span
                 className="text-sm text-gray-500 dark:text-gray-400 hover:border-b-2 border-gray-400 cursor-pointer "
-              onClick={() => setShowComments(!showComments)}
+                onClick={() => setShowComments(!showComments)}
               >
-                    {post?.commentCount} comments
+                {post?.commentCount} comments
               </span>
               <span className="text-sm text-gray-500 dark:text-gray-400 hover:border-b-2 border-gray-400 cursor-pointer ">
-              {post?.shareCount} share
+                {post?.shareCount} share
               </span>
             </div>
           </div>
@@ -132,7 +132,7 @@ const PostCard = ({ post, isLiked, onShare, onComment, onLike }) => {
           <div className="flex justify-between mb-2">
             <Button
               variant="ghost"
-              className={`flex-1 dark:hover:bg-gray-600 ${isLiked ? "text-blue-600" :""}`}
+              className={`flex-1 dark:hover:bg-gray-600 ${isLiked ? "text-blue-600" : ""}`}
               onClick={onLike}
             >
               <ThumbsUp className="mr-2 h-4 w-4" /> Like
@@ -152,7 +152,7 @@ const PostCard = ({ post, isLiked, onShare, onComment, onLike }) => {
                 <Button
                   variant="ghost"
                   className="flex-1 dark:hover:bg-gray-500"
-                onClick={onShare}
+                  onClick={onShare}
                 >
                   <Share2 className="mr-2 h-4 w-4" />
                   share

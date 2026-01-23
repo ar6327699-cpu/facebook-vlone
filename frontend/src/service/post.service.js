@@ -2,10 +2,10 @@ import axiosInstance from "./url.service"
 
 
 //create method for posts
-export const createPost = async(postData) =>{
+export const createPost = async (postData) => {
     try {
-         const result = await  axiosInstance.post('/users/posts', postData)
-         return result?.data?.data;
+        const result = await axiosInstance.post('/users/posts', postData)
+        return result?.data?.data;
     } catch (error) {
         console.error(error)
         throw error;
@@ -13,10 +13,10 @@ export const createPost = async(postData) =>{
 }
 
 //create method for story
-export const createStory = async(postData) =>{
+export const createStory = async (postData) => {
     try {
-         const result = await  axiosInstance.post('/users/story', postData)
-         return result?.data?.data;
+        const result = await axiosInstance.post('/users/story', postData)
+        return result?.data?.data;
     } catch (error) {
         console.error(error)
         throw error;
@@ -24,10 +24,10 @@ export const createStory = async(postData) =>{
 }
 
 //get all post method 
-export const getAllPosts = async() =>{
+export const getAllPosts = async () => {
     try {
-         const result = await  axiosInstance.get('/users/posts')
-         return result?.data?.data;
+        const result = await axiosInstance.get('/users/posts')
+        return result?.data?.data;
     } catch (error) {
         console.error(error)
         throw error;
@@ -35,10 +35,10 @@ export const getAllPosts = async() =>{
 }
 
 //get all story method 
-export const getAllStory = async() =>{
+export const getAllStory = async () => {
     try {
-         const result = await  axiosInstance.get('/users/story')
-         return result?.data?.data;
+        const result = await axiosInstance.get('/users/story')
+        return result?.data?.data;
     } catch (error) {
         console.error(error)
         throw error;
@@ -48,10 +48,10 @@ export const getAllStory = async() =>{
 
 
 //method for like a post
-export const likePost = async(postId) =>{
+export const likePost = async (postId) => {
     try {
-         const result = await  axiosInstance.post(`/users/posts/likes/${postId}`)
-         return result?.data?.data;
+        const result = await axiosInstance.post(`/users/posts/likes/${postId}`)
+        return result?.data?.data;
     } catch (error) {
         console.error(error)
         throw error;
@@ -60,10 +60,10 @@ export const likePost = async(postId) =>{
 
 
 //method for comments a post
-export const commentsPost = async(postId,comment) =>{
+export const commentsPost = async (postId, comment) => {
     try {
-         const result = await  axiosInstance.post(`/users/posts/comments/${postId}`,comment)
-         return result?.data?.data;
+        const result = await axiosInstance.post(`/users/posts/comments/${postId}`, comment)
+        return result?.data?.data;
     } catch (error) {
         console.error(error)
         throw error;
@@ -71,10 +71,10 @@ export const commentsPost = async(postId,comment) =>{
 }
 
 //method for share a post
-export const sharePost = async(postId) =>{
+export const sharePost = async (postId) => {
     try {
-         const result = await  axiosInstance.post(`/users/posts/share/${postId}`)
-         return result?.data?.data;
+        const result = await axiosInstance.post(`/users/posts/share/${postId}`)
+        return result?.data?.data;
     } catch (error) {
         console.error(error)
         throw error;
@@ -83,9 +83,29 @@ export const sharePost = async(postId) =>{
 
 
 //get all users posts 
-export const getAllUserPosts = async(userId)=>{
+export const getAllUserPosts = async (userId) => {
     try {
         const result = await axiosInstance.get(`/users/posts/user/${userId}`)
+        return result?.data?.data;
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
+}
+
+export const likeComment = async (commentId) => {
+    try {
+        const result = await axiosInstance.post(`/users/posts/comments/${commentId}/like`)
+        return result?.data?.data;
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
+}
+
+export const addCommentReply = async (commentId, reply) => {
+    try {
+        const result = await axiosInstance.post(`/users/posts/comments/${commentId}/reply`, reply)
         return result?.data?.data;
     } catch (error) {
         console.error(error)

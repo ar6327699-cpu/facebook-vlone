@@ -14,9 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { updateUserCoverPhoto, updateUserProfile } from "@/service/user.service";
+import { togglePrivacy, updateUserCoverPhoto, updateUserProfile } from "@/service/user.service";
 import userStore from "@/store/userStore";
 import { useForm } from "react-hook-form";
+import { Switch } from "@/components/ui/switch";
+import toast from "react-hot-toast";
 
 const ProfileHeader = ({
   id,
@@ -34,13 +36,13 @@ const ProfileHeader = ({
   const [loading, setLaoding] = useState(false);
   const { setUser } = userStore();
 
-   const {register,handleSubmit,setValue} = useForm({
-    defaultValues:{
+  const { register, handleSubmit, setValue } = useForm({
+    defaultValues: {
       username: profileData?.username,
       dateOfBirth: profileData?.dateOfBirth?.split("T")[0],
       gender: profileData?.gender
     }
-   })
+  })
 
   const profileImageInputRef = useRef();
   const coverImageInputRef = useRef();
@@ -90,13 +92,23 @@ const ProfileHeader = ({
         formData.append("coverPhoto", coverPhotoFile);
       }
       const updateProfile = await updateUserCoverPhoto(id, formData);
-      setProfileData({ ...profileData, coverPhoto:updateProfile.coverPhoto });
+      setProfileData({ ...profileData, coverPhoto: updateProfile.coverPhoto });
       setIsEditCoverModel(false);
       setCoverPhotoFile(null);
     } catch (error) {
       console.error("error updating user cover photo", error);
     } finally {
       setLaoding(false);
+    }
+  };
+
+  const handleTogglePrivacy = async () => {
+    try {
+      const isPrivate = await togglePrivacy();
+      setProfileData({ ...profileData, isPrivate });
+      toast.success(`Profile is now ${isPrivate ? "private" : "public"}`);
+    } catch (error) {
+      toast.error("Failed to toggle privacy");
     }
   };
 
@@ -152,13 +164,19 @@ const ProfileHeader = ({
             </p>
           </div>
           {isOwner && (
-            <Button
-              className="mt-4 md:mt-0 cursor-pointer"
-              onClick={() => setIsEditProfileModel(true)}
-            >
-              <PenLine className="w-4 h-4 mr-2" />
-              Edit Profile
-            </Button>
+            <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0">
+              <div className="flex items-center space-x-2 mr-4 bg-white dark:bg-gray-800 p-2 rounded-lg shadow-sm">
+                <Label htmlFor="privacy-toggle" className="text-xs font-semibold">Private Profile</Label>
+                <Switch id="privacy-toggle" checked={profileData?.isPrivate} onCheckedChange={handleTogglePrivacy} />
+              </div>
+              <Button
+                className="cursor-pointer"
+                onClick={() => setIsEditProfileModel(true)}
+              >
+                <PenLine className="w-4 h-4 mr-2" />
+                Edit Profile
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -204,7 +222,7 @@ const ProfileHeader = ({
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
-                  <input type="file" accept="image/*" className="hidden" ref={profileImageInputRef}  onChange={handleProfilePictureChange}/>
+                  <input type="file" accept="image/*" className="hidden" ref={profileImageInputRef} onChange={handleProfilePictureChange} />
                   <Button type="button" variant="outline" size="sm" onClick={() => profileImageInputRef.current?.click()}>
                     <Upload className="h-4 w-4 mr-2" />
                     Change Profile Picture
@@ -212,11 +230,11 @@ const ProfileHeader = ({
                 </div>
                 <div>
                   <Label htmlFor="username">Username</Label>
-                  <Input id="username"  {...register("username")}/>
+                  <Input id="username"  {...register("username")} />
                 </div>
                 <div>
                   <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                  <Input id="dateOfBirth" type="date"  {...register("dateOfBirth")}/>
+                  <Input id="dateOfBirth" type="date"  {...register("dateOfBirth")} />
                 </div>
 
                 <div>
@@ -236,7 +254,7 @@ const ProfileHeader = ({
                   type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-400 text-white"
                 >
-                  <Save className="w-4 h-4 mr-2" /> {loading ? "Saving...": "Save changes"}
+                  <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save changes"}
                 </Button>
               </form>
             </motion.div>
@@ -280,7 +298,7 @@ const ProfileHeader = ({
                       className="w-full h-40 object-cover rounded-lg mb-4"
                     />
                   )}
-                  <input type="file" accept="image/*" className="hidden" ref={coverImageInputRef}  onChange={handleCoverPhotoChange}/>
+                  <input type="file" accept="image/*" className="hidden" ref={coverImageInputRef} onChange={handleCoverPhotoChange} />
                   <Button type="button" variant="outline" size="sm" onClick={() => coverImageInputRef.current?.click()}>
                     <Upload className="h-4 w-4 mr-2" />
                     Select New Cover Photo
@@ -290,10 +308,10 @@ const ProfileHeader = ({
                 <Button
                   className="w-full bg-blue-600 hover:bg-blue-400 text-white"
                   onClick={onSubmitCoverPhoto}
-                  disabled = {!coverPhotoFile}
+                  disabled={!coverPhotoFile}
                   type="button"
                 >
-                  <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." :"Save Cover Photo"}
+                  <Save className="w-4 h-4 mr-2" /> {loading ? "Saving..." : "Save Cover Photo"}
                 </Button>
               </form>
             </motion.div>

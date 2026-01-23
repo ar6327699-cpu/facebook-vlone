@@ -1,54 +1,69 @@
 const express = require('express');
 const authMiddleware = require('../middleware/authMiddleware');
-const { followUser, unfollowUser, deleteUserFromRequest, getAllFriendsRequest, getAllUserForRequest, getAllMutualFriends, getAllUser, getUserProfile, checkUserAuth } = require('../controllers/userController');
+const { followUser, unfollowUser, deleteUserFromRequest, getAllFriendsRequest, getAllUserForRequest, getAllMutualFriends, getAllUser, getUserProfile, checkUserAuth, unfriendUser, blockUser, unblockUser, togglePrivacy, getBlockedUsers } = require('../controllers/userController');
 const { createOrUpdateUserBio, updateUserProfile, updateCoverPhoto } = require('../controllers/createOrUpdateController');
 const { multerMiddleware } = require('../config/cloudinary');
 const router = express.Router();
 
 
 //user follow 
-router.post('/follow',authMiddleware,followUser)
+router.post('/follow', authMiddleware, followUser)
 
 //user unfollow
-router.post('/unfollow',authMiddleware,unfollowUser)
+router.post('/unfollow', authMiddleware, unfollowUser)
+
+//unfriend user
+router.post('/unfriend', authMiddleware, unfriendUser)
+
+//block user
+router.post('/block', authMiddleware, blockUser)
+
+//unblock user
+router.post('/unblock', authMiddleware, unblockUser)
+
+//toggle privacy
+router.post('/toggle-privacy', authMiddleware, togglePrivacy)
+
+// get blocked users
+router.get('/get-blocked-users', authMiddleware, getBlockedUsers)
 
 //remove user from request
-router.post('/friend-request/remove',authMiddleware,deleteUserFromRequest)
+router.post('/friend-request/remove', authMiddleware, deleteUserFromRequest)
 
 
 //get all friends request
-router.get('/friend-request',authMiddleware,getAllFriendsRequest )
+router.get('/friend-request', authMiddleware, getAllFriendsRequest)
 
 
 //get all friends for request
-router.get('/user-to-request',authMiddleware,getAllUserForRequest)
+router.get('/user-to-request', authMiddleware, getAllUserForRequest)
 
 
 //get all mutual friends 
-router.get('/mutual-friends/:userId',authMiddleware,getAllMutualFriends)
+router.get('/mutual-friends/:userId', authMiddleware, getAllMutualFriends)
 
 
 //get all users fror search 
-router.get('/',authMiddleware,getAllUser)
+router.get('/', authMiddleware, getAllUser)
 
 //get all users fror search 
-router.get('/profile/:userId',authMiddleware,getUserProfile)
+router.get('/profile/:userId', authMiddleware, getUserProfile)
 
 
 //get all users fror search 
-router.get('/check-auth',authMiddleware,checkUserAuth)
+router.get('/check-auth', authMiddleware, checkUserAuth)
 
 
 
 //create or update user bio
-router.put('/bio/:userId',authMiddleware, createOrUpdateUserBio)
+router.put('/bio/:userId', authMiddleware, createOrUpdateUserBio)
 
 
 // update user profile
-router.put('/profile/:userId',authMiddleware, multerMiddleware.single('profilePicture'),updateUserProfile)
+router.put('/profile/:userId', authMiddleware, multerMiddleware.single('profilePicture'), updateUserProfile)
 
 
 // update user cover
-router.put('/profile/cover-photo/:userId',authMiddleware,multerMiddleware.single('coverPhoto') ,updateCoverPhoto)
+router.put('/profile/cover-photo/:userId', authMiddleware, multerMiddleware.single('coverPhoto'), updateCoverPhoto)
 
 module.exports = router;

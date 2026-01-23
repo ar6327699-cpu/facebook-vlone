@@ -15,6 +15,9 @@ import { logout } from "@/service/auth.service";
 import { getAllUsers } from "@/service/user.service";
 import useSidebarStore from "@/store/sidebarStore";
 import userStore from "@/store/userStore";
+import { userFriendStore } from "@/store/userFriendsStore";
+import { useChatStore } from "@/store/chatStore";
+import toast from "react-hot-toast";
 import {
   Bell,
   Home,
@@ -24,6 +27,7 @@ import {
   Moon,
   Search,
   Sun,
+  UserPlus,
   Users,
   Video,
 } from "lucide-react";
@@ -31,20 +35,23 @@ import { useTheme } from "next-themes";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
-import toast from "react-hot-toast";
 
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery,setSearchQuery] = useState("");
-  const [userList,setUserList] = useState([])
-  const [filterUsers,setFilterUsers] = useState([])
-  const [loading,setLoading] = useState(false);
-  const [activeTab,setActiveTab] = useState("home");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [userList, setUserList] = useState([])
+  const [filterUsers, setFilterUsers] = useState([])
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("home");
   const searchRef = useRef(null)
   const { theme, setTheme } = useTheme();
   const { toggleSidebar } = useSidebarStore();
   const router = useRouter();
   const { user, clearUser } = userStore();
+  const { followUser } = userFriendStore();
+  const { unreadMessages, friendRequestCount, clearFriendRequestCount } = useChatStore();
+
+  const unreadMsgCount = unreadMessages.length;
 
   const userPlaceholder = user?.username
     ?.split(" ")
@@ -71,68 +78,68 @@ const Header = () => {
   };
 
 
-  useEffect(() =>{
+  useEffect(() => {
     const fetchUsers = async () => {
-       try {
-         setLoading(true);
-         const result = await getAllUsers()
-         setUserList(result);
-       } catch (error) {
-         console.log(error);
-       }finally{
+      try {
+        setLoading(true);
+        const result = await getAllUsers()
+        setUserList(result);
+      } catch (error) {
+        console.log(error);
+      } finally {
         setLoading(false);
-       }
+      }
     }
     fetchUsers();
-  },[])
+  }, [])
 
-  useEffect(() =>{
-    if(searchQuery){
+  useEffect(() => {
+    if (searchQuery) {
       const filterUser = userList.filter(user => {
-       return  user.username.toLowerCase().includes(searchQuery.toLowerCase())
+        return user.username.toLowerCase().includes(searchQuery.toLowerCase())
       })
       setFilterUsers(filterUser);
       setIsSearchOpen(true)
-    }else{
+    } else {
       setFilterUsers([])
       setIsSearchOpen(false)
     }
-  },[searchQuery,userList])
+  }, [searchQuery, userList])
 
-  const handleSearchSubmit = (e) =>{
-     e.preventDefault()
-     setIsSearchOpen(false)
+  const handleSearchSubmit = (e) => {
+    e.preventDefault()
+    setIsSearchOpen(false)
   }
-  
-  const handleUserClick = async(userId) =>{
-     try {
-       setLoading(true)
-       setIsSearchOpen(false)
-       setSearchQuery("")
-       await router.push(`user-profile/${userId}`)
-     } catch (error) {
-       console.log(error)
-     }finally{
+
+  const handleUserClick = async (userId) => {
+    try {
+      setLoading(true)
+      setIsSearchOpen(false)
+      setSearchQuery("")
+      await router.push(`/user-profile/${userId}`)
+    } catch (error) {
+      console.log(error)
+    } finally {
       setLoading(false)
-     }
-  }
-
-  const handleSearchClose = (e) =>{
-        if(!searchRef.current?.contains(e.target)){
-          setIsSearchOpen(false)
-        }
-  }
-   useEffect(() =>{
-    document.addEventListener("click",handleSearchClose)
-    return () => {
-      document.removeEventListener("click",handleSearchClose)
     }
-   })
+  }
+
+  const handleSearchClose = (e) => {
+    if (!searchRef.current?.contains(e.target)) {
+      setIsSearchOpen(false)
+    }
+  }
+  useEffect(() => {
+    document.addEventListener("click", handleSearchClose)
+    return () => {
+      document.removeEventListener("click", handleSearchClose)
+    }
+  })
 
 
-   if(loading){
-    return <Loader/>
-   }
+  if (loading) {
+    return <Loader />
+  }
 
 
   return (
@@ -162,32 +169,49 @@ const Header = () => {
               {isSearchOpen && (
                 <div className="absolute top-full left-0 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg mt-1 z-50 ">
                   <div className="p-2">
-                    {filterUsers.length >0 ? (
-                      filterUsers.map((user) =>(
-                        <div className="flex items-center space-x-8 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer" 
-                         key={user._id}
-                         onClick={() => handleUserClick(user?._id)}
+                    {filterUsers.length > 0 ? (
+                      filterUsers.map((item) => (
+                        <div className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer group"
+                          key={item._id}
                         >
-                        <Search className="absolute text-sm  text-gray-400 " />
-                        <div className="flex items-center gap-2"
-                        >
-                          <Avatar className="h-8 w-8">
-                            {user?.profilePicture ? (
-                              <AvatarImage
-                                src={user?.profilePicture}
-                                alt={user?.username}
-                              />
-                            ) : (
-                              <AvatarFallback>{userPlaceholder}</AvatarFallback>
-                            )}
-                          </Avatar>
-                          <span>{user?.username}</span>
+                          <div className="flex items-center gap-2"
+                            onClick={() => handleUserClick(item?._id)}
+                          >
+                            <Avatar className="h-8 w-8">
+                              {item?.profilePicture ? (
+                                <AvatarImage
+                                  src={item?.profilePicture}
+                                  alt={item?.username}
+                                />
+                              ) : (
+                                <AvatarFallback>{item.username?.[0]}</AvatarFallback>
+                              )}
+                            </Avatar>
+                            <span className="font-medium">{item?.username}</span>
+                          </div>
+                          {user?._id !== item?._id && !user?.following?.includes(item?._id) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-4 h-8 transition-all active:scale-95"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                followUser(item?._id);
+
+                                // Emit socket event
+                                useChatStore.getState().emitFriendRequest(item?._id, user);
+
+                                toast.success(`Request sent to ${item.username}`);
+                              }}
+                            >
+                              <UserPlus className="h-4 w-4 mr-2" /> Add Friend
+                            </Button>
+                          )}
                         </div>
-                      </div>
                       ))
-                    ):(
+                    ) : (
                       <>
-                       <div className="p-2 text-gray-500">No user Found</div>
+                        <div className="p-2 text-gray-500">No user Found</div>
                       </>
                     )}
 
@@ -208,7 +232,7 @@ const Header = () => {
               variant="ghost"
               size="icon"
               className={`relative text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-transparent  ${activeTab === name ? "text-blue-600" : " "}`}
-              onClick={() => handleNavigation(path,name)}
+              onClick={() => handleNavigation(path, name)}
             >
               <Icon />
             </Button>
@@ -228,32 +252,47 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="hidden md:block text-gray-600 cursor-pointer pl-1"
+            className="hidden md:block text-gray-600 cursor-pointer pl-1 relative"
+            onClick={() => {
+              clearFriendRequestCount();
+              router.push("/friends-list");
+            }}
           >
             <Bell />
+            {friendRequestCount > 0 && (
+              <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full">
+                {friendRequestCount}
+              </span>
+            )}
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="hidden md:block text-gray-600 cursor-pointer pl-1"
+            className="hidden md:block text-gray-600 cursor-pointer pl-1 relative"
+            onClick={() => handleNavigation("/chat", "messages")}
           >
             <MessageCircle />
+            {unreadMsgCount > 0 && (
+              <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full">
+                {unreadMsgCount}
+              </span>
+            )}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8 mr-2">
-                      {user?.profilePicture ? (
-                        <AvatarImage
-                          src={user?.profilePicture}
-                          alt={user?.username}
-                        />
-                      ) : (
-                        <AvatarFallback className="dark:bg-gray-400">
-                          {userPlaceholder}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
+                <Avatar className="h-8 w-8 mr-2">
+                  {user?.profilePicture ? (
+                    <AvatarImage
+                      src={user?.profilePicture}
+                      alt={user?.username}
+                    />
+                  ) : (
+                    <AvatarFallback className="dark:bg-gray-400">
+                      {userPlaceholder}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-64 z-50" align="end">
@@ -277,7 +316,7 @@ const Header = () => {
                         {user?.username}
                       </p>
                       <p className="text-xs mt-2 text-gray-600 leading-none">
-                       {user?.email}
+                        {user?.email}
                       </p>
                     </div>
                   </div>
@@ -290,7 +329,10 @@ const Header = () => {
               >
                 <Users /> <span className="ml-2">Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => handleNavigation("/chat", "messages")}
+              >
                 <MessageCircle /> <span className="ml-2">Messages</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

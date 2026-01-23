@@ -32,13 +32,26 @@ const FriendRequest = ({ friend, onAction }) => {
         </h3>
 
         <div className="flex flex-col justify-between">
-          <Button className="bg-blue-500 " size="lg" onClick={() => {}}>
-            <UserPlus className="mr-2 h-4 w-4" /> Confirm
-          </Button>
-
-          <Button className="mt-2 " size="lg" onClick={() => {}}>
-            <UserMinus className="mr-2 h-4 w-4" /> Delete
-          </Button>
+          <button
+            onClick={() => onAction("confirm", friend._id)}
+            className="flex-1 bg-blue-600 dark:bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+          >
+            Confirm
+          </button>
+          <button
+            onClick={() => onAction("delete", friend._id)}
+            className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-2 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition mt-2"
+          >
+            Delete
+          </button>
+        </div>
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => onAction("block", friend._id)}
+            className="flex-1 text-xs text-red-500 hover:underline"
+          >
+            Block User
+          </button>
         </div>
       </motion.div>
     </AnimatePresence>

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal, UserX } from "lucide-react";
 import { userFriendStore } from "@/store/userFriendsStore";
 import toast from "react-hot-toast";
+import { unfriendUser, blockUser } from "@/service/user.service";
 
 const MutualFriends = ({ id, isOwner }) => {
   const { fetchMutualFriends, mutualFriends, UnfollowUser } = userFriendStore();
@@ -24,6 +25,26 @@ const MutualFriends = ({ id, isOwner }) => {
   const handleUnfollow = async (userId) => {
     await UnfollowUser(userId);
     toast.success("you have unfollow successfully");
+  };
+
+  const handleUnfriend = async (userId) => {
+    try {
+      await unfriendUser({ userIdToUnfriend: userId });
+      toast.success("Unfriended successfully");
+      fetchMutualFriends(id);
+    } catch (error) {
+      toast.error("Failed to unfriend");
+    }
+  };
+
+  const handleBlock = async (userId) => {
+    try {
+      await blockUser({ userIdToBlock: userId });
+      toast.success("Blocked successfully");
+      fetchMutualFriends(id);
+    } catch (error) {
+      toast.error("Failed to block");
+    }
   };
 
   return (
@@ -75,13 +96,18 @@ const MutualFriends = ({ id, isOwner }) => {
                   {isOwner && (
                     <DropdownMenuContent
                       align="end"
-                      onClick={async () => {
+                    >
+                      <DropdownMenuItem onClick={async () => {
                         await handleUnfollow(friend?._id);
                         await fetchMutualFriends(id);
-                      }}
-                    >
-                      <DropdownMenuItem>
+                      }}>
                         <UserX className="h-4 w-4 mr-2" /> Unfollow
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleUnfriend(friend?._id)}>
+                        <UserX className="h-4 w-4 mr-2" /> Unfriend
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBlock(friend?._id)} className="text-red-500">
+                        <UserX className="h-4 w-4 mr-2" /> Block User
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   )}

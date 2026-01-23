@@ -18,6 +18,8 @@ import MutualFriends from "./profileContent/MutualFriends";
 import EditBio from "./profileContent/EditBio";
 import { usePostStore } from "@/store/usePostStore";
 import { formatDateInDDMMYYY } from "@/lib/utils";
+import userStore from "@/store/userStore";
+import toast from "react-hot-toast";
 
 const ProfileDetails = ({
   activeTab,
@@ -35,6 +37,7 @@ const ProfileDetails = ({
     handleCommentPost,
     handleSharePost,
   } = usePostStore();
+  const { user } = userStore();
 
   useEffect(() => {
     if (id) {
@@ -50,23 +53,8 @@ const ProfileDetails = ({
   }, []);
 
   const handleLike = async (postId) => {
-    const updatedLikePost = new Set(likePosts);
-    if (updatedLikePost.has(postId)) {
-      updatedLikePost.delete(postId);
-      toast.error("post disliked successfully");
-    } else {
-      updatedLikePost.add(postId);
-      toast.success("post like successfully");
-    }
-    setLikePosts(updatedLikePost);
-    localStorage.setItem(
-      "likePosts",
-      JSON.stringify(Array.from(updatedLikePost))
-    );
-
     try {
       await handleLikePost(postId);
-      await fetchPost();
     } catch (error) {
       console.error(error);
       toast.error("failed to like or unlike the post");
@@ -80,17 +68,15 @@ const ProfileDetails = ({
         <div className="w-full lg:w-[70%] space-y-6 mb-4">
           {userPosts?.map((post) => (
             <PostsContent
-              key={userPosts?._id}
+              key={post?._id}
               post={post}
-              isLiked={likePosts.has(post?._id)}
+              isLiked={post.likes?.includes(user?._id)}
               onLike={() => handleLike(post?._id)}
               onComment={async (comment) => {
                 await handleCommentPost(post?._id, comment.text);
-                await fetchUserPost(id);
               }}
               onShare={async () => {
                 await handleSharePost(post?._id);
-                await fetchUserPost(id);
               }}
             />
           ))}
@@ -186,7 +172,7 @@ const ProfileDetails = ({
               </div>
               <div className="flex items-center">
                 <Cake className="w-5 h-5 mr-2" />
-                <span>Birthday: {formatDateInDDMMYYY( profileData?.dateOfBirth)}</span>
+                <span>Birthday: {formatDateInDDMMYYY(profileData?.dateOfBirth)}</span>
               </div>
             </div>
           </CardContent>
