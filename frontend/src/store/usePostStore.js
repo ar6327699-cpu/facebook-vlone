@@ -6,7 +6,10 @@ import {
   likePost,
   sharePost,
   createStory,
-  commentsPost
+  commentsPost,
+  deletePost,
+  deleteStory,
+  likeStory
 } from "@/service/post.service";
 import toast from "react-hot-toast";
 import { create } from "zustand";
@@ -39,6 +42,7 @@ export const usePostStore = create((set) => ({
       set({ error, loading: false });
     }
   },
+
   //fetch all story
   fetchStoryPost: async () => {
     set({ loading: true });
@@ -84,9 +88,6 @@ export const usePostStore = create((set) => ({
 
   // Handle like post with optimistic update
   handleLikePost: async (postId) => {
-    // Get the current user ID - assuming it's available in userStore
-    // For simplicity, we'll just toggle the state locally first
-    // Get the current user ID from localStorage or pass it
     const storedUser = JSON.parse(localStorage.getItem("user-storage") || "{}");
     const currentUserId = storedUser?.state?.user?._id;
 
@@ -120,23 +121,18 @@ export const usePostStore = create((set) => ({
 
     try {
       await likePost(postId);
-      // Optional: fetch again to sync with server if needed
-      // const posts = await getAllPosts();
-      // set({ posts });
     } catch (error) {
-      // Revert on error if necessary
       console.error(error);
       toast.error("Failed to update like");
     }
   },
 
-  //create a new story
   handleCommentPost: async (postId, text) => {
     set({ loading: true });
     try {
       const newComments = await commentsPost(postId, { text });
       const newCommentData = {
-        _id: newComments._id || Math.random().toString(), // fallback for optimistic
+        _id: newComments._id || Math.random().toString(),
         ...newComments
       };
 
@@ -154,7 +150,7 @@ export const usePostStore = create((set) => ({
         posts: updatePosts(state.posts),
         userPosts: updatePosts(state.userPosts),
         loading: false
-      }))
+      }));
       toast.success("Comments added successfully");
     } catch (error) {
       set({ error, loading: false });
@@ -162,8 +158,6 @@ export const usePostStore = create((set) => ({
     }
   },
 
-
-  //create a new story
   handleSharePost: async (postId) => {
     set({ loading: true });
     try {
@@ -184,7 +178,76 @@ export const usePostStore = create((set) => ({
       toast.success("post share successfully");
     } catch (error) {
       set({ error, loading: false });
-      toast.error('failed to share this post')
+      toast.error('failed to share this post');
+    }
+  },
+
+  // post delete — UI se bhi hatao turant
+  handleDeletePost: async (postId) => {
+    try {
+      await deletePost(postId);
+      set((state) => ({
+        posts: state.posts.filter((post) => post._id !== postId),
+        userPosts: state.userPosts.filter((post) => post._id !== postId),
+      }));
+      toast.success("Post deleted successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete post");
+    }
+  },
+
+  // story delete
+  handleDeleteStory: async (storyId) => {
+    try {
+      await deleteStory(storyId);
+      set((state) => ({
+        story: state.story.filter((s) => s._id !== storyId),
+      }));
+      toast.success("Story deleted");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete story");
+    }
+  },
+
+  // story like (optimistic update)
+  handleLikeStory: async (storyId) => {
+    const storedUser = JSON.parse(localStorage.getItem("user-storage") || "{}");
+    const currentUserId = storedUser?.state?.user?._id;
+
+    set((state) => {
+      const updateStories = (stories) => stories.map((s) => {
+        if (s._id === storyId) {
+          const likes = s.likes || [];
+          const isLiked = currentUserId ? likes.includes(currentUserId) : false;
+
+          let newLikes;
+          if (isLiked) {
+            newLikes = likes.filter(id => id !== currentUserId);
+          } else {
+            newLikes = [...likes, currentUserId].filter(Boolean);
+          }
+
+          return {
+            ...s,
+            likes: newLikes,
+            likeCount: isLiked ? Math.max(0, (s.likeCount || 0) - 1) : (s.likeCount || 0) + 1
+          };
+        }
+        return s;
+      });
+
+      return {
+        story: updateStories(state.story)
+      };
+    });
+
+    try {
+      await likeStory(storyId);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to react to story");
     }
   },
 }));

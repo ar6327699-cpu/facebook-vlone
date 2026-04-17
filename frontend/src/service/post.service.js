@@ -112,3 +112,36 @@ export const addCommentReply = async (commentId, reply) => {
         throw error;
     }
 }
+
+// delete post — sirf apni post delete kar sakte ho
+export const deletePost = async (postId) => {
+    try {
+        const result = await axiosInstance.delete(`/users/posts/${postId}`)
+        return result?.data;
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
+}
+
+// delete story
+export const deleteStory = async (storyId) => {
+    try {
+        const result = await axiosInstance.delete(`/users/story/${storyId}`)
+        return result?.data;
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
+}
+
+// like story
+export const likeStory = async (storyId) => {
+    try {
+        const result = await axiosInstance.post(`/users/story/likes/${storyId}`)
+        return result?.data?.data;
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
+}

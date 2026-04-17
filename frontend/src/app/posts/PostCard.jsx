@@ -3,8 +3,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, MoreHorizontal, Share2, ThumbsUp } from "lucide-react";
+import { MessageCircle, MoreHorizontal, Share2, ThumbsUp, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -12,14 +18,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import PostComments from "./PostComments";
 import { formateDate } from "@/lib/utils";
+import { usePostStore } from "@/store/usePostStore";
+import userStore from "@/store/userStore";
 
 const PostCard = ({ post, isLiked, onShare, onComment, onLike }) => {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const commentInputRef = useRef(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const commentInputRef = useRef(null);
+  const { handleDeletePost } = usePostStore();
+  const currentUser = userStore((state) => state.user);
+  const isOwner = currentUser?._id === post?.user?._id;
 
   const handleCommentClick = () => {
     setShowComments(true);
@@ -33,23 +46,48 @@ const PostCard = ({ post, isLiked, onShare, onComment, onLike }) => {
     .join("");
 
   const generateSharedLink = () => {
-    return `http://localhost:3000/${post?.id}`;
+    return `${window.location.origin}/posts/${post?._id}`;
   };
+
   const handleShare = (platform) => {
-    const url = generateSharedLink();
+    // Post ka content + media URL (Cloudinary) directly share karo
+    const postContent = post?.content || "";
+    const mediaUrl = post?.mediaUrl || "";   // Cloudinary URL — publicly accessible hai
+    const authorName = post?.user?.username || "Someone";
+
+    // Share message banaao
+    const shareText = [
+      postContent ? `"${postContent}"` : "",
+      `— ${authorName} posted on our app`,
+      mediaUrl ? `\n🖼️ ${mediaUrl}` : ""
+    ].filter(Boolean).join("\n");
+
+    const encodedText = encodeURIComponent(shareText);
+    const encodedMedia = encodeURIComponent(mediaUrl);
+
     let shareUrl;
     switch (platform) {
       case "facebook":
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=}`;
+        // Facebook sirf registered domain URLs share karta hai, media URL share karo
+        shareUrl = mediaUrl
+          ? `https://www.facebook.com/sharer/sharer.php?u=${encodedMedia}&quote=${encodeURIComponent(postContent)}`
+          : `https://www.facebook.com/sharer/sharer.php?quote=${encodedText}`;
         break;
       case "twitter":
-        shareUrl = `https://twitter.com/intent/tweet?url=}`;
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+        break;
+      case "whatsapp":
+        shareUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
         break;
       case "linkedin":
-        shareUrl = `https://www.linkedin.com/shareArticle?mini=true&url=}`;
+        shareUrl = mediaUrl
+          ? `https://www.linkedin.com/shareArticle?mini=true&url=${encodedMedia}&title=${encodeURIComponent(postContent)}`
+          : `https://www.linkedin.com/shareArticle?mini=true&summary=${encodedText}`;
         break;
       case "copy":
-        navigator.clipboard.writeText(url);
+        // Copy karo content + media link
+        const copyText = [postContent, mediaUrl].filter(Boolean).join("\n");
+        navigator.clipboard.writeText(copyText);
         setIsShareDialogOpen(false);
         return;
       default:
@@ -94,9 +132,54 @@ const PostCard = ({ post, isLiked, onShare, onComment, onLike }) => {
                 </p>
               </div>
             </div>
-            <Button variant="ghost" className="dark:hover:bg-gray-500">
-              <MoreHorizontal className="dark:text-white h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="dark:hover:bg-gray-500">
+                  <MoreHorizontal className="dark:text-white h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {isOwner && (
+                  <DropdownMenuItem
+                    className="text-red-500 cursor-pointer focus:text-red-500"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Post
+                  </DropdownMenuItem>
+                )}
+                {!isOwner && (
+                  <DropdownMenuItem className="text-gray-500">
+                    Report Post
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Custom Delete Confirmation Dialog for Post */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Delete Post</DialogTitle>
+                        <DialogDescription>
+                            {currentUser?.username ? `${currentUser.username}, kya ap waqayi yeh post delete karna chahte hain?` : "Kya ap is post ko delete karna chahte hain?"}
+                            <br />
+                            This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="sm:justify-end mt-4">
+                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={() => {
+                            handleDeletePost(post._id);
+                            setIsDeleteDialogOpen(false);
+                        }} className="bg-red-600 hover:bg-red-700 text-white">
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
           </div>
           <p className="mb-4">{post?.content}</p>
           {post?.mediaUrl && post.mediaType === "image" && (
@@ -165,17 +248,37 @@ const PostCard = ({ post, isLiked, onShare, onComment, onLike }) => {
                     Choose how you want to share this post
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex flex-col space-y-4 ">
-                  <Button onClick={() => handleShare("facebook")}>
+                <div className="flex flex-col space-y-3 mt-2">
+                  <Button
+                    onClick={() => handleShare("facebook")}
+                    className="bg-[#1877F2] hover:bg-[#166fe5] text-white"
+                  >
                     Share on Facebook
                   </Button>
-                  <Button onClick={() => handleShare("twitter")}>
-                    Share on Twitter
+                  <Button
+                    onClick={() => handleShare("twitter")}
+                    className="bg-black hover:bg-gray-800 text-white"
+                  >
+                    Share on X (Twitter)
                   </Button>
-                  <Button onClick={() => handleShare("linkedin")}>
-                    Share on Linkedin
+                  <Button
+                    onClick={() => handleShare("whatsapp")}
+                    className="bg-[#25D366] hover:bg-[#1ebe5b] text-white"
+                  >
+                    Share on WhatsApp
                   </Button>
-                  <Button onClick={() => handleShare("copy")}>Copy Link</Button>
+                  <Button
+                    onClick={() => handleShare("linkedin")}
+                    className="bg-[#0A66C2] hover:bg-[#084fa4] text-white"
+                  >
+                    Share on LinkedIn
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleShare("copy")}
+                  >
+                    📋 Copy Link
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>

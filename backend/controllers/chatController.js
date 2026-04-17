@@ -124,7 +124,7 @@ const editMessage = async (req, res) => {
 
 const deleteMessage = async (req, res) => {
     try {
-        const { messageId } = req.body;
+        const { messageId } = req.params; // body se nahi, URL se lena hoga
         const senderId = req.user.userId;
 
         const message = await Message.findById(messageId);
@@ -134,11 +134,7 @@ const deleteMessage = async (req, res) => {
             return response(res, 403, 'You can only delete your own messages');
         }
 
-        const timeDiff = (new Date() - message.createdAt) / (1000 * 60);
-        if (timeDiff > 5) {
-            return response(res, 400, 'Cannot delete message after 5 minutes');
-        }
-
+        // Soft delete — message nahi hatega, sirf text change hoga
         message.isDeleted = true;
         message.text = 'This message was deleted';
         message.imageUrl = null;

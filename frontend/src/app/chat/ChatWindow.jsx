@@ -10,6 +10,14 @@ import { formatDistanceToNow, differenceInMinutes } from "date-fns";
 import { Edit2, Trash2, Check, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import userStore from "@/store/userStore";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 
 const ChatWindow = () => {
     const { messages, receiver, sendMessage, activeConversationId, editMessage, deleteMessage, friends, blockedUsers } = useChatStore();
@@ -20,6 +28,8 @@ const ChatWindow = () => {
     const [preview, setPreview] = useState(null);
     const scrollRef = useRef(null);
     const fileInputRef = useRef(null);
+    const [messageToDelete, setMessageToDelete] = useState(null);
+    const currentUser = userStore((state) => state.user);
 
     // --- Refactored Block Logic ---
     const [isBlockedByThem, setIsBlockedByThem] = useState(false);
@@ -139,14 +149,14 @@ const ChatWindow = () => {
         }
     };
 
-    const handleDelete = async (msg) => {
-        const diff = differenceInMinutes(new Date(), new Date(msg.createdAt));
-        if (diff > 5) {
-            toast.error("You can only delete messages within 5 minutes.");
-            return;
-        }
-        if (window.confirm("Are you sure you want to delete this message?")) {
-            await deleteMessage(msg._id);
+    const handleDeleteClick = (msg) => {
+        setMessageToDelete(msg);
+    };
+
+    const confirmDelete = async () => {
+        if (messageToDelete) {
+            await deleteMessage(messageToDelete._id);
+            setMessageToDelete(null);
         }
     };
 
@@ -219,10 +229,12 @@ const ChatWindow = () => {
                                         </>
                                     )}
 
-                                    {isMe && !msg.isDeleted && differenceInMinutes(new Date(), new Date(msg.createdAt)) <= 5 && (
+                                    {isMe && !msg.isDeleted && (
                                         <div className="absolute top-0 -left-12 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                                            <button onClick={() => handleEdit(msg)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-gray-500"><Edit2 className="h-3 w-3" /></button>
-                                            <button onClick={() => handleDelete(msg)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-red-500"><Trash2 className="h-3 w-3" /></button>
+                                            {differenceInMinutes(new Date(), new Date(msg.createdAt)) <= 5 && (
+                                                <button onClick={() => handleEdit(msg)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-gray-500"><Edit2 className="h-3 w-3" /></button>
+                                            )}
+                                            <button onClick={() => handleDeleteClick(msg)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded text-red-500"><Trash2 className="h-3 w-3" /></button>
                                         </div>
                                     )}
                                 </div>
@@ -330,6 +342,28 @@ const ChatWindow = () => {
                     </div>
                 );
             })()}
+
+            {/* Custom Delete Confirmation Dialog */}
+            <Dialog open={!!messageToDelete} onOpenChange={(open) => !open && setMessageToDelete(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Delete Message</DialogTitle>
+                        <DialogDescription>
+                            {currentUser?.username ? `${currentUser.username}, are you sure you want to delete this message?` : "Are you sure you want to delete this message?"}
+                            <br />
+                            This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="sm:justify-end mt-4">
+                        <Button variant="outline" onClick={() => setMessageToDelete(null)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={confirmDelete} className="bg-red-600 hover:bg-red-700 text-white">
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

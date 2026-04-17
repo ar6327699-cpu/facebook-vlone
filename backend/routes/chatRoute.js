@@ -9,6 +9,6 @@ router.post('/send', authMiddleware, multerMiddleware.single('file'), sendMessag
 router.get('/conversations', authMiddleware, getConversations);
 router.get('/messages/:conversationId', authMiddleware, getMessages);
 router.put('/edit', authMiddleware, editMessage);
-router.delete('/delete', authMiddleware, deleteMessage);
+router.delete('/delete/:messageId', authMiddleware, deleteMessage);
 
 module.exports = router;

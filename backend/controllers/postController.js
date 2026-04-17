@@ -305,12 +305,77 @@ const addReplyToComment = async (req, res) => {
         return response(res, 500, 'Internal server error', error.message);
     }
 }
+// delete post by owner
+const deletePost = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const userId = req.user.userId;
 
+        const post = await Post.findById(postId);
+        if (!post) return response(res, 404, 'Post not found');
 
+        // Sirf owner hi delete kar sakta hai
+        if (post.user.toString() !== userId.toString()) {
+            return response(res, 403, 'You can only delete your own posts');
+        }
 
+        await Post.findByIdAndDelete(postId);
+        return response(res, 200, 'Post deleted successfully');
+    } catch (error) {
+        console.log('error deleting post', error);
+        return response(res, 500, 'Internal server error', error.message);
+    }
+}
 
+// delete story
+const deleteStory = async (req, res) => {
+    try {
+        const { storyId } = req.params;
+        const userId = req.user.userId;
 
+        const story = await Story.findById(storyId);
+        if (!story) return response(res, 404, 'Story not found');
 
+        if (story.user.toString() !== userId.toString()) {
+            return response(res, 403, 'You can only delete your own story');
+        }
+
+        await Story.findByIdAndDelete(storyId);
+        return response(res, 200, 'Story deleted successfully');
+    } catch (error) {
+        console.log('error deleting story', error);
+        return response(res, 500, 'Internal server error', error.message);
+    }
+}
+
+// like story api
+const likeStory = async (req, res) => {
+    const { storyId } = req.params;
+    const userId = req.user.userId;
+    try {
+        const story = await Story.findById(storyId)
+        if (!story) {
+            return response(res, 404, 'story not found')
+        }
+        
+        if (!story.likes) story.likes = [];
+        
+        const hasLiked = story.likes.includes(userId)
+        if (hasLiked) {
+            story.likes = story.likes.filter(id => id.toString() !== userId.toString())
+            story.likeCount = Math.max(0, (story.likeCount || 0) - 1); 
+        } else {
+            story.likes.push(userId)
+            story.likeCount = (story.likeCount || 0) + 1
+        }
+
+        const updatedStory = await story.save()
+        return response(res, 201, hasLiked ? "Story unliked successfully" : "Story liked successfully", updatedStory)
+    } catch (error) {
+        console.log(error)
+        return response(res, 500, 'Internal server error', error.message)
+    }
+}
 
 module.exports = {
     createPost,
@@ -322,5 +387,8 @@ module.exports = {
     createStory,
     getAllStory,
     likeComment,
-    addReplyToComment
+    addReplyToComment,
+    deletePost,
+    deleteStory,
+    likeStory
 }

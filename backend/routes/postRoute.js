@@ -1,7 +1,7 @@
 const express = require('express');
 const authMiddleware = require('../middleware/authMiddleware');
 const { multerMiddleware } = require('../config/cloudinary');
-const { createPost, getAllPosts, getPostByUserId, likePost, sharePost, addCommentToPost, getAllStory, createStory, likeComment, addReplyToComment } = require('../controllers/postController');
+const { createPost, getAllPosts, getPostByUserId, likePost, sharePost, addCommentToPost, getAllStory, createStory, likeComment, addReplyToComment, deletePost, deleteStory, likeStory } = require('../controllers/postController');
 const router = express.Router();
 
 
@@ -13,6 +13,9 @@ router.get('/posts', authMiddleware, getAllPosts)
 
 //get post by userid
 router.get('/posts/user/:userId', authMiddleware, getPostByUserId)
+
+//delete post — sirf owner kar sakta hai
+router.delete('/posts/:postId', authMiddleware, deletePost)
 
 
 //user like post route
@@ -39,5 +42,10 @@ router.post('/story', authMiddleware, multerMiddleware.single('media'), createSt
 //get all story
 router.get('/story', authMiddleware, getAllStory)
 
+//delete story
+router.delete('/story/:storyId', authMiddleware, deleteStory)
+
+//like story
+router.post('/story/likes/:storyId', authMiddleware, likeStory)
 
 module.exports = router;

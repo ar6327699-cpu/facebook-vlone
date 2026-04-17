@@ -14,7 +14,7 @@ const StoryCard = ({ isAddStory, story }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileType, setFileType] = useState("");
   const [loading, setLoading] = useState(false);
-  const { handleCreateStory } = usePostStore();
+  const { handleCreateStory, handleDeleteStory, handleLikeStory } = usePostStore();
   const [showPreview, setShowPreview] = useState(false);
   const [isNewStory, setIsNewStory] = useState(false);
 
@@ -149,19 +149,27 @@ const StoryCard = ({ isAddStory, story }) => {
           )}
         </CardContent>
       </Card>
-     {showPreview && (
-      <ShowStoryPreview
-        file={filePreview}
-        fileType={fileType}
-        onClose={handleClosePreview}
-        onPost= {handleCreateStoryPost}
-        isNewStory={isNewStory}
-        username = {isNewStory ? user?.username : story?.user?.username}
-        avatar = {isNewStory ? user?.profilePicture : story?.user?.profilePicture}
-        isLoading={loading}
-      
-      />
-     )}
+      {showPreview && (
+       <ShowStoryPreview
+         file={filePreview}
+         fileType={fileType}
+         onClose={handleClosePreview}
+         onPost={isNewStory ? handleCreateStoryPost : null}
+         username={isNewStory ? user?.username : story?.user?.username}
+         avatar={isNewStory ? user?.profilePicture : story?.user?.profilePicture}
+         isLoading={loading}
+         isOwner={user?._id === (story?.user?._id || story?.user)}
+         hasLiked={story?.likes?.includes(user?._id)}
+         likeCount={story?.likeCount || 0}
+         onDelete={() => {
+           handleDeleteStory(story._id);
+           setShowPreview(false);
+         }}
+         onLike={() => {
+           handleLikeStory(story._id);
+         }}
+       />
+      )}
 
       
     </>

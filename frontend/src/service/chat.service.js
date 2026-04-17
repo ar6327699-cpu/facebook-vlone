@@ -33,7 +33,7 @@ export const editMessage = async (messageId, text) => {
 
 export const deleteMessage = async (messageId) => {
     try {
-        const response = await axios.delete(`${API_URL}/chat/delete`, { data: { messageId }, withCredentials: true });
+        const response = await axios.delete(`${API_URL}/chat/delete/${messageId}`, { withCredentials: true });
         return response.data;
     } catch (error) {
         throw error;
